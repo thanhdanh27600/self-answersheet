@@ -5,6 +5,7 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {
+	ArrowDownCircle,
 	ArrowUpCircle,
 	Check,
 	Download,
@@ -286,9 +287,9 @@ const AnswerSheetApp: React.FC = () => {
 	const stats = getSummaryStats();
 
 	return (
-		<div className="w-screen h-screen">
+		<div className="w-screen h-full">
 			<div className="max-w-4xl mx-auto p-6">
-				<Card>
+				<Card className="gap-0">
 					<CardHeader className="relative">
 						{loadingUpdateRemote && (
 							<Loader2 className="animate-spin absolute top-0 right-4" />
@@ -296,16 +297,18 @@ const AnswerSheetApp: React.FC = () => {
 						<CardTitle className="text-3xl font-bold mb-4">
 							Answer Sheet Self-Revision
 						</CardTitle>
+					</CardHeader>
 
+					<CardContent>
 						{/* Action Buttons */}
-						<div className="flex flex-wrap gap-2">
+						<div className="flex flex-wrap gap-2 sticky top-1 z-10 bg-white py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4">
 							<Button
 								onClick={() => addQuestions(10)}
 								variant="default"
 								size="sm"
 							>
-								<Plus className="w-4 h-4 mr-2" />
-								Add 10 Questions
+								<Plus className="w-4 h-4 md:mr-2" />
+								10 Questions
 							</Button>
 
 							<Button
@@ -313,8 +316,8 @@ const AnswerSheetApp: React.FC = () => {
 								variant="default"
 								size="sm"
 							>
-								<Plus className="w-4 h-4 mr-2" />
-								Add 100 Questions
+								<Plus className="w-4 h-4 md:mr-2" />
+								100 Questions
 							</Button>
 
 							<Button
@@ -326,7 +329,8 @@ const AnswerSheetApp: React.FC = () => {
 								variant="default"
 								size="sm"
 							>
-								View Stats
+								<ArrowDownCircle className="w-4 h-4 mr-2" />
+								Summary
 							</Button>
 
 							<Button
@@ -368,9 +372,7 @@ const AnswerSheetApp: React.FC = () => {
 								Clear All
 							</Button>
 						</div>
-					</CardHeader>
 
-					<CardContent>
 						<Tabs
 							value={activeTab}
 							onValueChange={(value) =>
@@ -513,24 +515,11 @@ const AnswerSheetApp: React.FC = () => {
 								)}
 							</TabsContent>
 						</Tabs>
-
 						{/* Status Summary */}
 						{stats.total > 0 && (
 							<Card className="mt-6">
 								<CardHeader>
-									<CardTitle className="text-lg">
-										Summary
-										<Button
-											onClick={() => {
-												window.scrollTo({top: 0});
-											}}
-											variant="ghost"
-											size="lg"
-											className="float-right"
-										>
-											<ArrowUpCircle className="w-12 h-12" />
-										</Button>
-									</CardTitle>
+									<CardTitle className="text-lg">Summary</CardTitle>
 								</CardHeader>
 								<CardContent>
 									<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -582,6 +571,16 @@ const AnswerSheetApp: React.FC = () => {
 					</CardContent>
 				</Card>
 			</div>
+			<Button
+				onClick={() => {
+					window.scrollTo({top: 0});
+				}}
+				variant="ghost"
+				size="lg"
+				className="fixed bottom-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black text-white cursor-pointer"
+			>
+				<ArrowUpCircle className="w-8 h-8 size-1 p-2 text-white" />
+			</Button>
 		</div>
 	);
 };
