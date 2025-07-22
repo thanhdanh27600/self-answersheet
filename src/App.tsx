@@ -4,6 +4,7 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {useQuery} from "@tanstack/react-query";
 import {
 	ArrowDownCircle,
 	ArrowUpCircle,
@@ -59,21 +60,21 @@ interface SummaryStats {
 	unanswered: number;
 }
 
+const fetchRemoteData = async () => {
+	const data = await pb.collection("b").getOne("8x3q1fyyot9naxk");
+	return data?.data;
+};
+
 const AnswerSheetApp: React.FC = () => {
 	const [activeTab, setActiveTab] = useState<"questions" | "key">("questions");
 	const [data, setData] = useState<AppData>({questions: [], answerKey: []});
 	const [loadingUpdateRemote, setLoadingUpdateRemote] = useState(true);
-
 	const [isImporting, setIsImporting] = useState(false);
 
 	const questionForm: UseFormReturn<QuestionsFormData> =
 		useForm<QuestionsFormData>({
 			defaultValues: {questions: []},
 		});
-
-	const keyForm: UseFormReturn<AnswerKeyFormData> = useForm<AnswerKeyFormData>({
-		defaultValues: {answerKey: []},
-	});
 
 	const {
 		fields: questionFields,
@@ -86,6 +87,10 @@ const AnswerSheetApp: React.FC = () => {
 		name: "questions",
 	});
 
+	const keyForm: UseFormReturn<AnswerKeyFormData> = useForm<AnswerKeyFormData>({
+		defaultValues: {answerKey: []},
+	});
+
 	const {
 		fields: keyFields,
 		append: appendKey,
@@ -95,6 +100,28 @@ const AnswerSheetApp: React.FC = () => {
 		control: keyForm.control,
 		name: "answerKey",
 	});
+
+	const {data: remoteData} = useQuery({
+		queryKey: ["remoteData"],
+		queryFn: fetchRemoteData,
+		refetchOnWindowFocus: true,
+		refetchInterval: !loadingUpdateRemote ? 5000 : false,
+		refetchIntervalInBackground: false,
+		refetchOnMount: true,
+	});
+
+	useEffect(() => {
+		if (remoteData) {
+			if (!remoteData.questions?.length) {
+				// addQuestions(5);
+			} else {
+				replaceQuestions(remoteData.questions);
+				replaceKeys(remoteData.answerKey);
+			}
+			scrollTo(0, 0);
+		}
+		setLoadingUpdateRemote(false);
+	}, [remoteData, replaceQuestions, replaceKeys]);
 
 	// Persist from remote
 	useEffect(() => {
@@ -236,7 +263,7 @@ const AnswerSheetApp: React.FC = () => {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = `answer_sheet_${new Date().toISOString().split("T")[0]}.json`;
+		a.download = `answer_sheet_${new Date().toISOString()}.json`;
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
