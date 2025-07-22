@@ -18,7 +18,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_STRAPI_TOKEN: "${{ secrets.VITE_POCKETBASE_URL }}"
+          VITE_POCKETBASE_URL: "${{ secrets.VITE_POCKETBASE_URL }}"
       - name: CD
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
