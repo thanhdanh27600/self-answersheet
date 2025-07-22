@@ -144,7 +144,7 @@ const AnswerSheetApp: React.FC = () => {
 		setData(_data);
 	}, [questionRerenderKeys, keysRerenderKeys]);
 
-	const updateRemoteKey = useDebounce(requestKey, 1000);
+	const updateRemoteKey = useDebounce(requestKey, 500);
 	useEffect(() => {
 		const _data = {
 			questions: questionValues || [],
