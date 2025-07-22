@@ -114,31 +114,14 @@ const AnswerSheetApp: React.FC = () => {
 		if (remoteData) {
 			if (!remoteData.questions?.length) {
 				// addQuestions(5);
+				scrollTo(0, 0);
 			} else {
 				replaceQuestions(remoteData.questions);
 				replaceKeys(remoteData.answerKey);
 			}
-			scrollTo(0, 0);
 		}
 		setLoadingUpdateRemote(false);
 	}, [remoteData, replaceQuestions, replaceKeys]);
-
-	// Persist from remote
-	useEffect(() => {
-		(async () => {
-			try {
-				const data = await pb.collection("b").getOne("8x3q1fyyot9naxk");
-				if (!data?.data || !data.data.questions?.length) {
-					// addQuestions(5);
-				} else {
-					replaceQuestions(data.data.questions);
-					replaceKeys(data.data.answerKey);
-				}
-			} catch (error) {}
-			scrollTo(0, 0);
-			setLoadingUpdateRemote(false);
-		})();
-	}, []);
 
 	// Watch form values to update data state
 	const questionValues = questionForm.watch("questions");
@@ -204,7 +187,6 @@ const AnswerSheetApp: React.FC = () => {
 
 			appendQuestion(newQuestions);
 			appendKey(newKeys);
-			scrollTo(0, 0);
 		},
 		[appendQuestion, appendKey, generateQuestions, generateAnswerKeys]
 	);
