@@ -59,7 +59,7 @@ interface SummaryStats {
 const AnswerSheetApp: React.FC = () => {
 	const [activeTab, setActiveTab] = useState<"questions" | "key">("questions");
 	const [data, setData] = useState<AppData>({questions: [], answerKey: []});
-	const [loadingUpdateRemote, setLoadingUpdateRemote] = useState(false);
+	const [loadingUpdateRemote, setLoadingUpdateRemote] = useState(true);
 
 	const [isImporting, setIsImporting] = useState(false);
 
@@ -103,8 +103,9 @@ const AnswerSheetApp: React.FC = () => {
 					replaceQuestions(data.data.questions);
 					replaceKeys(data.data.answerKey);
 				}
-				scrollTo(0, 0);
 			} catch (error) {}
+			scrollTo(0, 0);
+			setLoadingUpdateRemote(false);
 		})();
 	}, []);
 
@@ -161,6 +162,7 @@ const AnswerSheetApp: React.FC = () => {
 
 			appendQuestion(newQuestions);
 			appendKey(newKeys);
+			scrollTo(0, 0);
 		},
 		[appendQuestion, appendKey, generateQuestions, generateAnswerKeys]
 	);
@@ -377,19 +379,26 @@ const AnswerSheetApp: React.FC = () => {
 						>
 							<TabsList className="grid w-full grid-cols-2">
 								<TabsTrigger value="questions">
-									Questions & Answers ({questionFields.length})
+									<p className="hidden md:block">
+										Questions & Your Answers ({questionFields.length})
+									</p>
+									<p className="md:hidden">Q&A ({questionFields.length})</p>
 								</TabsTrigger>
 								<TabsTrigger value="key">
-									Answer Key ({keyFields.length})
+									<p className="hidden md:block">
+										Answer Keys ({keyFields.length})
+									</p>
+									<p className="md:hidden">Keys ({keyFields.length})</p>
 								</TabsTrigger>
 							</TabsList>
 
 							{/* Questions Tab */}
 							<TabsContent value="questions" className="space-y-4 mt-6">
-								<div className="flex items-center justify-between">
-									<h2 className="text-xl font-semibold">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<h2 className="text-xl font-semibold hidden md:block">
 										Questions & Your Answers
 									</h2>
+									<h2 className="text-xl font-semibold md:hidden">Q&A</h2>
 									<div className="flex gap-2">
 										<Badge variant="outline">Total: {stats.total}</Badge>
 										<Badge variant="default" className="bg-green-500">
