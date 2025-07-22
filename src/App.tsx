@@ -15,13 +15,14 @@ import {
 	Upload,
 	X,
 } from "lucide-react";
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {useFieldArray, useForm, type UseFormReturn} from "react-hook-form";
 import {pb} from "./pocketbase";
 
 interface Question {
 	uid: string;
 	answer: string;
+	isSaved: boolean;
 }
 
 interface AnswerKey {
@@ -78,6 +79,7 @@ const AnswerSheetApp: React.FC = () => {
 		append: appendQuestion,
 		remove: removeQuestion,
 		replace: replaceQuestions,
+		update: updateQuestion,
 	} = useFieldArray({
 		control: questionForm.control,
 		name: "questions",
@@ -114,14 +116,14 @@ const AnswerSheetApp: React.FC = () => {
 	const questionValues = questionForm.watch("questions");
 	const keyValues = keyForm.watch("answerKey");
 
-	// hack rerender
-	const questionRerenderKeys = questionValues
-		?.map((q) => q.uid + q.answer)
-		.join();
-	const keysRerenderKeys = keyValues
-		?.map((k) => k.uid + k.correctAnswer)
-		.join();
-
+	const questionRerenderKeys = useMemo(
+		() => questionValues?.map((q) => q.uid + q.answer + q.isSaved).join(),
+		[questionValues]
+	);
+	const keysRerenderKeys = useMemo(
+		() => keyValues?.map((k) => k.uid + k.correctAnswer).join(),
+		[keyValues]
+	);
 	useEffect(() => {
 		const _data = {
 			questions: questionValues || [],
@@ -145,6 +147,7 @@ const AnswerSheetApp: React.FC = () => {
 		return Array.from({length: count}, (_, i) => ({
 			uid: `q_${timestamp}_${i}`,
 			answer: "",
+			isSaved: false,
 		}));
 	}, []);
 
@@ -167,6 +170,13 @@ const AnswerSheetApp: React.FC = () => {
 		},
 		[appendQuestion, appendKey, generateQuestions, generateAnswerKeys]
 	);
+
+	const handleQuestionClick = useCallback((index: number): void => {
+		updateQuestion(index, {
+			...questionForm.watch(`questions.${index}`),
+			isSaved: !questionForm.watch(`questions.${index}.isSaved`),
+		});
+	}, []);
 
 	const getAnswerStatus = useCallback(
 		(questionId: string, answer: string): AnswerStatus => {
@@ -423,14 +433,19 @@ const AnswerSheetApp: React.FC = () => {
 										{questionFields.map((field, index) => {
 											const answer =
 												questionForm.watch(`questions.${index}.answer`) || "";
+											const isSaved =
+												questionForm.watch(`questions.${index}.isSaved`) || "";
 											const status = getAnswerStatus(field.uid, answer);
 
 											return (
 												<Card key={field.id}>
 													<CardContent className="flex items-center gap-3 p-4">
 														<Badge
+															onClick={() => handleQuestionClick(index)}
 															variant="outline"
-															className="text-sm font-medium min-w-[3rem]"
+															className={`text-sm font-medium min-w-[3rem] cursor-pointer ${
+																isSaved ? "bg-yellow-500 text-white" : ""
+															}`}
 														>
 															Q{index + 1}
 														</Badge>
