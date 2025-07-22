@@ -15,9 +15,10 @@ import {
 	Upload,
 	X,
 } from "lucide-react";
-import React, {useCallback, useEffect, useMemo, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useFieldArray, useForm, type UseFormReturn} from "react-hook-form";
 import {pb} from "./pocketbase";
+import {useDebounce} from "./utils/useDebounce";
 
 interface Question {
 	uid: string;
@@ -116,28 +117,38 @@ const AnswerSheetApp: React.FC = () => {
 	const questionValues = questionForm.watch("questions");
 	const keyValues = keyForm.watch("answerKey");
 
-	const questionRerenderKeys = useMemo(
-		() => questionValues?.map((q) => q.uid + q.answer + q.isSaved).join(),
-		[questionValues]
-	);
-	const keysRerenderKeys = useMemo(
-		() => keyValues?.map((k) => k.uid + k.correctAnswer).join(),
-		[keyValues]
-	);
+	const questionRerenderKeys = questionValues
+		?.map((q) => q.uid + q.answer + q.isSaved)
+		.join();
+
+	const keysRerenderKeys = keyValues
+		?.map((k) => k.uid + k.correctAnswer)
+		.join();
+	const requestKey = `${questionRerenderKeys}_${keysRerenderKeys}`;
+
 	useEffect(() => {
 		const _data = {
 			questions: questionValues || [],
 			answerKey: keyValues || [],
 		};
-		updateRemote(_data);
 		setData(_data);
 	}, [questionRerenderKeys, keysRerenderKeys]);
 
-	const updateRemote = async (data: AppData) => {
+	const updateRemoteKey = useDebounce(requestKey, 1000);
+	useEffect(() => {
+		const _data = {
+			questions: questionValues || [],
+			answerKey: keyValues || [],
+		};
+		_updateRemote(_data, updateRemoteKey);
+	}, [updateRemoteKey]);
+
+	const _updateRemote = async (data: AppData, requestKey: string) => {
+		if (!data.questions.length && !data.answerKey.length) return;
 		if (loadingUpdateRemote) return;
 		setLoadingUpdateRemote(true);
 		try {
-			await pb.collection("b").update("8x3q1fyyot9naxk", {data});
+			await pb.collection("b").update("8x3q1fyyot9naxk", {data}, {requestKey});
 		} catch (error) {}
 		setLoadingUpdateRemote(false);
 	};
@@ -456,7 +467,7 @@ const AnswerSheetApp: React.FC = () => {
 																	`questions.${index}.answer`
 																)}
 																placeholder="Enter your answer..."
-																className="pr-10"
+																type="number"
 															/>
 															<div className="absolute right-3 top-1/2 transform -translate-y-1/2">
 																{status === true && (
