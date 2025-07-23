@@ -9,8 +9,8 @@ import {
 	ArrowDownCircle,
 	ArrowUpCircle,
 	Check,
+	DotIcon,
 	Download,
-	Loader2,
 	Plus,
 	Trash2,
 	Upload,
@@ -23,6 +23,7 @@ import React, {
 	type FocusEventHandler,
 } from "react";
 import {useFieldArray, useForm, type UseFormReturn} from "react-hook-form";
+import {cn} from "./lib/utils";
 import {pb} from "./pocketbase";
 import {useDebounce} from "./utils/useDebounce";
 
@@ -107,7 +108,12 @@ const AnswerSheetApp: React.FC = () => {
 		name: "answerKey",
 	});
 
-	const {data: remoteData} = useQuery({
+	const {
+		data: remoteData,
+		isLoading: isLoadingRemoteData,
+		dataUpdatedAt,
+		status,
+	} = useQuery({
 		queryKey: ["remoteData"],
 		queryFn: fetchRemoteData,
 		refetchOnWindowFocus: true,
@@ -124,9 +130,11 @@ const AnswerSheetApp: React.FC = () => {
 			} else {
 				replaceQuestions(remoteData.questions);
 				replaceKeys(remoteData.answerKey);
+				setLoadingUpdateRemote(false);
 			}
+		} else {
+			replaceQuestions([]);
 		}
-		setLoadingUpdateRemote(false);
 	}, [remoteData, replaceQuestions, replaceKeys]);
 
 	// Watch form values to update data state
@@ -335,9 +343,6 @@ const AnswerSheetApp: React.FC = () => {
 			<div className="max-w-4xl mx-auto p-6">
 				<Card className="gap-0">
 					<CardHeader className="relative">
-						{loadingUpdateRemote && (
-							<Loader2 className="animate-spin absolute top-0 right-4" />
-						)}
 						<CardTitle className="text-3xl font-bold mb-4">
 							Answer Sheet Self-Revision
 						</CardTitle>
@@ -345,7 +350,21 @@ const AnswerSheetApp: React.FC = () => {
 
 					<CardContent>
 						{/* Action Buttons */}
-						<div className="flex flex-wrap gap-2 sticky top-1 z-10 bg-white py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4">
+						<div
+							className={`flex flex-wrap gap-2 sticky top-1 z-10 bg-white ${
+								isLoadingRemoteData || loadingUpdateRemote ? "opacity-80" : ""
+							} py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4`}
+						>
+							<div className=" float-right">
+								<DotIcon
+									className={cn("absolute w-8 h-8 -top-2 -right-2", {
+										"text-green-600": status === "success",
+										"text-red-600": status === "error",
+										"text-gray-600": status === "pending",
+									})}
+								/>
+							</div>
+
 							<Button
 								onClick={() => addQuestions(10)}
 								variant="default"
@@ -413,7 +432,8 @@ const AnswerSheetApp: React.FC = () => {
 								disabled={stats.total === 0}
 							>
 								<Trash2 className="w-4 h-4 mr-2" />
-								Clear All
+								<p className="max-sm:hidden">Clear All</p>
+								<p className="sm:hidden">Reset</p>
 							</Button>
 						</div>
 
@@ -456,7 +476,7 @@ const AnswerSheetApp: React.FC = () => {
 									</div>
 								</div>
 
-								{questionFields.length === 0 ? (
+								{questionFields.length === 0 && status === "success" ? (
 									<Alert>
 										<AlertDescription>
 											No questions yet. Add some questions to get started.
@@ -473,11 +493,11 @@ const AnswerSheetApp: React.FC = () => {
 
 											return (
 												<Card key={field.id}>
-													<CardContent className="flex items-center gap-3 p-4">
+													<CardContent className="flex items-center gap-3 p-4 relative">
 														<Badge
 															onClick={() => handleQuestionClick(index)}
 															variant="outline"
-															className={`text-sm font-medium min-w-[3rem] cursor-pointer ${
+															className={`max-md:absolute max-md:-top-8 max-md:left-[calc(50%-1.5rem)] bg-white text-sm font-medium min-w-[3rem] cursor-pointer ${
 																isSaved ? "bg-yellow-500 text-white" : ""
 															}`}
 														>
@@ -504,14 +524,20 @@ const AnswerSheetApp: React.FC = () => {
 															</div>
 														</div>
 
-														<Button
-															onClick={() => removeQuestionAndKey(index)}
-															variant="ghost"
-															size="sm"
-															className="text-red-500 hover:text-red-700"
+														<div
+															className="absolute right-2 -top-4"
+															onClick={() => {
+																if (
+																	window.confirm(
+																		"Are you sure you want to delete this question?"
+																	)
+																) {
+																	removeQuestionAndKey(index);
+																}
+															}}
 														>
-															<Trash2 className="w-4 h-4" />
-														</Button>
+															<Trash2 className="w-4 h-4 text-red-500 cursor-pointer" />
+														</div>
 													</CardContent>
 												</Card>
 											);
@@ -524,7 +550,7 @@ const AnswerSheetApp: React.FC = () => {
 							<TabsContent value="key" className="space-y-4 mt-6">
 								<h2 className="text-xl font-semibold">Answer Key</h2>
 
-								{keyFields.length === 0 ? (
+								{keyFields.length === 0 && status === "success" ? (
 									<Alert>
 										<AlertDescription>
 											No answer keys yet. Add some questions first.
