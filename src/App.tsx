@@ -16,7 +16,12 @@ import {
 	Upload,
 	X,
 } from "lucide-react";
-import React, {useCallback, useEffect, useState} from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useState,
+	type FocusEventHandler,
+} from "react";
 import {useFieldArray, useForm, type UseFormReturn} from "react-hook-form";
 import {pb} from "./pocketbase";
 import {useDebounce} from "./utils/useDebounce";
@@ -70,6 +75,7 @@ const AnswerSheetApp: React.FC = () => {
 	const [data, setData] = useState<AppData>({questions: [], answerKey: []});
 	const [loadingUpdateRemote, setLoadingUpdateRemote] = useState(true);
 	const [isImporting, setIsImporting] = useState(false);
+	const [focusElement, setFocusElement] = useState<string | null>(null);
 
 	const questionForm: UseFormReturn<QuestionsFormData> =
 		useForm<QuestionsFormData>({
@@ -105,7 +111,7 @@ const AnswerSheetApp: React.FC = () => {
 		queryKey: ["remoteData"],
 		queryFn: fetchRemoteData,
 		refetchOnWindowFocus: true,
-		refetchInterval: !loadingUpdateRemote ? 5000 : false,
+		refetchInterval: !loadingUpdateRemote && !focusElement ? 5000 : false,
 		refetchIntervalInBackground: false,
 		refetchOnMount: true,
 	});
@@ -146,12 +152,13 @@ const AnswerSheetApp: React.FC = () => {
 
 	const updateRemoteKey = useDebounce(requestKey, 500);
 	useEffect(() => {
+		if (focusElement) return;
 		const _data = {
 			questions: questionValues || [],
 			answerKey: keyValues || [],
 		};
 		_updateRemote(_data, updateRemoteKey);
-	}, [updateRemoteKey]);
+	}, [updateRemoteKey, focusElement]);
 
 	const _updateRemote = async (data: AppData, requestKey: string) => {
 		if (!data.questions.length && !data.answerKey.length) return;
@@ -314,6 +321,13 @@ const AnswerSheetApp: React.FC = () => {
 		[removeQuestion, removeKey]
 	);
 
+	const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
+		setFocusElement(e.target.name);
+	};
+	const handleBlur: FocusEventHandler<HTMLInputElement> = () => {
+		setFocusElement(null);
+	};
+
 	const stats = getSummaryStats();
 
 	return (
@@ -475,8 +489,10 @@ const AnswerSheetApp: React.FC = () => {
 																{...questionForm.register(
 																	`questions.${index}.answer`
 																)}
-																placeholder="Enter your answer..."
-																type="number"
+																placeholder="Input answer..."
+																type="tel"
+																onFocus={handleFocus}
+																onBlur={handleBlur}
 															/>
 															<div className="absolute right-3 top-1/2 transform -translate-y-1/2">
 																{status === true && (
@@ -531,7 +547,10 @@ const AnswerSheetApp: React.FC = () => {
 															{...keyForm.register(
 																`answerKey.${index}.correctAnswer`
 															)}
-															placeholder="Enter correct answer..."
+															placeholder="Input key..."
+															type="tel"
+															onFocus={handleFocus}
+															onBlur={handleBlur}
 														/>
 													</div>
 
