@@ -111,7 +111,6 @@ const AnswerSheetApp: React.FC = () => {
 	const {
 		data: remoteData,
 		isLoading: isLoadingRemoteData,
-		dataUpdatedAt,
 		status,
 	} = useQuery({
 		queryKey: ["remoteData"],
@@ -174,7 +173,9 @@ const AnswerSheetApp: React.FC = () => {
 		setLoadingUpdateRemote(true);
 		try {
 			await pb.collection("b").update("8x3q1fyyot9naxk", {data}, {requestKey});
-		} catch (error) {}
+		} catch (error) {
+			console.log(error);
+		}
 		setLoadingUpdateRemote(false);
 	};
 
