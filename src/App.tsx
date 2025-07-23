@@ -583,14 +583,20 @@ const AnswerSheetApp: React.FC = () => {
 														/>
 													</div>
 
-													<Button
-														onClick={() => removeQuestionAndKey(index)}
-														variant="ghost"
-														size="sm"
-														className="text-red-500 hover:text-red-700"
+													<div
+														className="absolute right-2 -top-4"
+														onClick={() => {
+															if (
+																window.confirm(
+																	"Are you sure you want to delete this question?"
+																)
+															) {
+																removeQuestionAndKey(index);
+															}
+														}}
 													>
-														<Trash2 className="w-4 h-4" />
-													</Button>
+														<Trash2 className="w-4 h-4 text-red-500 cursor-pointer" />
+													</div>
 												</CardContent>
 											</Card>
 										))}
