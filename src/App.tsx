@@ -372,7 +372,7 @@ const AnswerSheetApp: React.FC = () => {
 								size="sm"
 							>
 								<Plus className="w-4 h-4 md:mr-2" />
-								10 Questions
+								10 Row
 							</Button>
 
 							<Button
@@ -381,7 +381,7 @@ const AnswerSheetApp: React.FC = () => {
 								size="sm"
 							>
 								<Plus className="w-4 h-4 md:mr-2" />
-								100 Questions
+								100 Row
 							</Button>
 
 							<Button
@@ -393,8 +393,8 @@ const AnswerSheetApp: React.FC = () => {
 								variant="default"
 								size="sm"
 							>
-								<ArrowDownCircle className="w-4 h-4 mr-2" />
-								Summary
+								<ArrowDownCircle className="w-4 h-4 md:mr-2" />
+								Stats
 							</Button>
 
 							<Button
@@ -403,7 +403,7 @@ const AnswerSheetApp: React.FC = () => {
 								size="sm"
 								disabled={stats.total === 0}
 							>
-								<Download className="w-4 h-4 mr-2" />
+								<Download className="w-4 h-4 md:mr-2" />
 								Export
 							</Button>
 
@@ -414,7 +414,7 @@ const AnswerSheetApp: React.FC = () => {
 								asChild
 							>
 								<label className="cursor-pointer">
-									<Upload className="w-4 h-4 mr-2" />
+									<Upload className="w-4 h-4 md:mr-2" />
 									{isImporting ? "Importing..." : "Import"}
 									<input
 										type="file"
@@ -432,7 +432,7 @@ const AnswerSheetApp: React.FC = () => {
 								size="sm"
 								disabled={stats.total === 0}
 							>
-								<Trash2 className="w-4 h-4 mr-2" />
+								<Trash2 className="w-4 h-4 md:mr-2" />
 								<p className="max-sm:hidden">Clear All</p>
 								<p className="sm:hidden">Reset</p>
 							</Button>
@@ -449,7 +449,9 @@ const AnswerSheetApp: React.FC = () => {
 									<p className="hidden md:block">
 										Questions & Your Answers ({questionFields.length})
 									</p>
-									<p className="md:hidden">Q&A ({questionFields.length})</p>
+									<p className="md:hidden">
+										Questions ({questionFields.length})
+									</p>
 								</TabsTrigger>
 								<TabsTrigger value="key">
 									<p className="hidden md:block">
