@@ -8,6 +8,8 @@ import {useQuery} from "@tanstack/react-query";
 import {
 	ArrowDownCircle,
 	ArrowUpCircle,
+	BetweenHorizonalStartIcon,
+	Bookmark,
 	Check,
 	DotIcon,
 	Download,
@@ -76,6 +78,7 @@ const AnswerSheetApp: React.FC = () => {
 	const [data, setData] = useState<AppData>({questions: [], answerKey: []});
 	const [loadingUpdateRemote, setLoadingUpdateRemote] = useState(true);
 	const [isImporting, setIsImporting] = useState(false);
+	const [showSavedOnly, setShowSavedOnly] = useState(false);
 	const [focusElement, setFocusElement] = useState<string | null>(null);
 
 	const questionForm: UseFormReturn<QuestionsFormData> =
@@ -206,6 +209,10 @@ const AnswerSheetApp: React.FC = () => {
 		},
 		[appendQuestion, appendKey, generateQuestions, generateAnswerKeys]
 	);
+
+	const handleSaved = (): void => {
+		setShowSavedOnly(!showSavedOnly);
+	};
 
 	const handleQuestionClick = useCallback((index: number): void => {
 		updateQuestion(index, {
@@ -350,116 +357,123 @@ const AnswerSheetApp: React.FC = () => {
 					</CardHeader>
 
 					<CardContent>
-						{/* Action Buttons */}
-						<div
-							className={`flex flex-wrap gap-2 sticky top-1 z-10 bg-white ${
-								isLoadingRemoteData || loadingUpdateRemote ? "opacity-80" : ""
-							} py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4`}
-						>
-							<div className=" float-right">
-								<DotIcon
-									className={cn("absolute w-8 h-8 -top-2 -right-2", {
-										"text-green-600": status === "success",
-										"text-red-600": status === "error",
-										"text-gray-600": status === "pending",
-									})}
-								/>
-							</div>
-
-							<Button
-								onClick={() => addQuestions(10)}
-								variant="default"
-								size="sm"
-							>
-								<Plus className="w-4 h-4 md:mr-2" />
-								10 Row
-							</Button>
-
-							<Button
-								onClick={() => addQuestions(100)}
-								variant="default"
-								size="sm"
-							>
-								<Plus className="w-4 h-4 md:mr-2" />
-								100 Row
-							</Button>
-
-							<Button
-								onClick={() => {
-									window.scroll({
-										top: document.body.scrollHeight,
-									});
-								}}
-								variant="default"
-								size="sm"
-							>
-								<ArrowDownCircle className="w-4 h-4 md:mr-2" />
-								Stats
-							</Button>
-
-							<Button
-								onClick={exportData}
-								variant="outline"
-								size="sm"
-								disabled={stats.total === 0}
-							>
-								<Download className="w-4 h-4 md:mr-2" />
-								Export
-							</Button>
-
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={isImporting}
-								asChild
-							>
-								<label className="cursor-pointer">
-									<Upload className="w-4 h-4 md:mr-2" />
-									{isImporting ? "Importing..." : "Import"}
-									<input
-										type="file"
-										accept=".json"
-										onChange={importData}
-										className="hidden"
-										disabled={isImporting}
-									/>
-								</label>
-							</Button>
-
-							<Button
-								onClick={clearAll}
-								variant="destructive"
-								size="sm"
-								disabled={stats.total === 0}
-							>
-								<Trash2 className="w-4 h-4 md:mr-2" />
-								<p className="max-sm:hidden">Clear All</p>
-								<p className="sm:hidden">Reset</p>
-							</Button>
-						</div>
-
 						<Tabs
 							value={activeTab}
 							onValueChange={(value) =>
 								setActiveTab(value as "questions" | "key")
 							}
 						>
-							<TabsList className="grid w-full grid-cols-2">
-								<TabsTrigger value="questions">
-									<p className="hidden md:block">
-										Questions & Your Answers ({questionFields.length})
-									</p>
-									<p className="md:hidden">
-										Questions ({questionFields.length})
-									</p>
-								</TabsTrigger>
-								<TabsTrigger value="key">
-									<p className="hidden md:block">
-										Answer Keys ({keyFields.length})
-									</p>
-									<p className="md:hidden">Keys ({keyFields.length})</p>
-								</TabsTrigger>
-							</TabsList>
+							<div
+								className={`flex flex-wrap gap-2 sticky top-4 z-10 bg-white ${
+									isLoadingRemoteData || loadingUpdateRemote ? "opacity-80" : ""
+								} py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4`}
+							>
+								<div className="float-right">
+									<DotIcon
+										className={cn("absolute w-8 h-8 -top-2 -right-2", {
+											"text-green-600": status === "success",
+											"text-red-600": status === "error",
+											"text-gray-600": status === "pending",
+										})}
+									/>
+								</div>
+
+								<Button
+									onClick={() => addQuestions(10)}
+									variant="default"
+									size="sm"
+								>
+									<Plus className="w-4 h-4 md:mr-2" />
+									10 Row
+								</Button>
+
+								<Button
+									onClick={() => addQuestions(100)}
+									variant="default"
+									size="sm"
+								>
+									<Plus className="w-4 h-4 md:mr-2" />
+									100 Row
+								</Button>
+
+								<Button
+									onClick={() => {
+										window.scroll({
+											top: document.body.scrollHeight,
+										});
+									}}
+									variant="default"
+									size="sm"
+								>
+									<ArrowDownCircle className="w-4 h-4 md:mr-2" />
+									Stats
+								</Button>
+
+								<Button
+									onClick={exportData}
+									variant="outline"
+									size="sm"
+									disabled={stats.total === 0}
+								>
+									<Download className="w-4 h-4 md:mr-2" />
+									Export
+								</Button>
+
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={isImporting}
+									asChild
+								>
+									<label className="">
+										<Upload className="w-4 h-4 md:mr-2" />
+										{isImporting ? "Importing..." : "Import"}
+										<input
+											type="file"
+											accept=".json"
+											onChange={importData}
+											className="hidden"
+											disabled={isImporting}
+										/>
+									</label>
+								</Button>
+
+								<Button
+									onClick={handleSaved}
+									size="sm"
+									className="bg-yellow-600 hover:bg-yellow-600 text-white"
+								>
+									<Bookmark className="w-4 h-4 md:mr-2" />
+									<p className="">Saved</p>
+								</Button>
+
+								<Button
+									onClick={clearAll}
+									variant="destructive"
+									size="sm"
+									disabled={stats.total === 0}
+								>
+									<Trash2 className="w-4 h-4 md:mr-2" />
+									<p className="max-sm:hidden">Clear All</p>
+									<p className="sm:hidden">Reset</p>
+								</Button>
+								<TabsList className="grid w-full grid-cols-2 z-10 ">
+									<TabsTrigger value="questions">
+										<p className="hidden md:block">
+											Questions & Your Answers ({questionFields.length})
+										</p>
+										<p className="md:hidden">
+											Questions ({questionFields.length})
+										</p>
+									</TabsTrigger>
+									<TabsTrigger value="key">
+										<p className="hidden md:block">
+											Answer Keys ({keyFields.length})
+										</p>
+										<p className="md:hidden">Keys ({keyFields.length})</p>
+									</TabsTrigger>
+								</TabsList>
+							</div>
 
 							{/* Questions Tab */}
 							<TabsContent value="questions" className="space-y-4 mt-6">
@@ -493,9 +507,10 @@ const AnswerSheetApp: React.FC = () => {
 											const isSaved =
 												questionForm.watch(`questions.${index}.isSaved`) || "";
 											const status = getAnswerStatus(field.uid, answer);
+											if (!isSaved && showSavedOnly) return null;
 
 											return (
-												<Card key={field.id}>
+												<Card key={field.id} id={`question-${index}`}>
 													<CardContent className="flex items-center gap-3 p-4 relative">
 														<Badge
 															onClick={() => handleQuestionClick(index)}
@@ -526,21 +541,6 @@ const AnswerSheetApp: React.FC = () => {
 																)}
 															</div>
 														</div>
-
-														<div
-															className="absolute right-2 -top-4"
-															onClick={() => {
-																if (
-																	window.confirm(
-																		"Are you sure you want to delete this question?"
-																	)
-																) {
-																	removeQuestionAndKey(index);
-																}
-															}}
-														>
-															<Trash2 className="w-4 h-4 text-red-500 cursor-pointer" />
-														</div>
 													</CardContent>
 												</Card>
 											);
@@ -562,7 +562,7 @@ const AnswerSheetApp: React.FC = () => {
 								) : (
 									<div className="space-y-3">
 										{keyFields.map((field, index) => (
-											<Card key={field.id}>
+											<Card key={field.id} id={`key-${index}`}>
 												<CardContent className="flex items-center gap-3 p-4">
 													<Badge
 														variant="secondary"
@@ -666,9 +666,45 @@ const AnswerSheetApp: React.FC = () => {
 				}}
 				variant="ghost"
 				size="lg"
-				className="fixed bottom-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black text-white cursor-pointer"
+				className="fixed bottom-28 right-4 w-10 h-10 rounded-full bg-black/80 hover:bg-black text-white cursor-pointer"
 			>
 				<ArrowUpCircle className="w-8 h-8 size-1 p-2 text-white" />
+			</Button>
+			<Button
+				onClick={() => {
+					const lastUnanswered = questionForm
+						.watch("questions")
+						.findIndex((q) => q.answer?.trim().length === 0);
+
+					if (lastUnanswered !== -1) {
+						const element = document.getElementById(
+							`question-${lastUnanswered}`
+						);
+						if (element) {
+							window.scrollTo({
+								top: element.offsetTop - (1 / 2) * window.innerHeight,
+							});
+							element.querySelector("input")?.focus();
+						}
+					} else {
+						window.scrollTo({top: document.body.scrollHeight});
+					}
+				}}
+				variant="ghost"
+				size="lg"
+				className="fixed bottom-16 right-4 w-10 h-10 rounded-full bg-black/80 hover:bg-black text-white cursor-pointer"
+			>
+				<BetweenHorizonalStartIcon className="w-8 h-8 size-1 p-2 text-white" />
+			</Button>
+			<Button
+				onClick={() => {
+					window.scrollTo({top: document.body.scrollHeight});
+				}}
+				variant="ghost"
+				size="lg"
+				className="fixed bottom-4 right-4 w-10 h-10 rounded-full bg-black/80 hover:bg-black text-white cursor-pointer"
+			>
+				<ArrowDownCircle className="w-8 h-8 size-1 p-2 text-white" />
 			</Button>
 		</div>
 	);
