@@ -323,12 +323,12 @@ const AnswerSheetApp: React.FC = () => {
 		[replaceQuestions, replaceKeys]
 	);
 
-	const clearAll = useCallback((): void => {
-		if (window.confirm("Are you sure you want to clear all data?")) {
-			replaceQuestions([]);
-			replaceKeys([]);
-		}
-	}, [replaceQuestions, replaceKeys]);
+	// const clearAll = useCallback((): void => {
+	// 	if (window.confirm("Are you sure you want to clear all data?")) {
+	// 		replaceQuestions([]);
+	// 		replaceKeys([]);
+	// 	}
+	// }, [replaceQuestions, replaceKeys]);
 
 	const removeQuestionAndKey = useCallback(
 		(index: number): void => {
