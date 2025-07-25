@@ -13,6 +13,7 @@ import {
 	Check,
 	DotIcon,
 	Download,
+	InfoIcon,
 	Plus,
 	Trash2,
 	Upload,
@@ -364,9 +365,9 @@ const AnswerSheetApp: React.FC = () => {
 							}
 						>
 							<div
-								className={`flex flex-wrap gap-2 sticky top-4 z-10 bg-white ${
+								className={`gap-2 flex flex-wrap justify-center sticky top-4 z-10 overflow-hidden bg-white ${
 									isLoadingRemoteData || loadingUpdateRemote ? "opacity-80" : ""
-								} py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4`}
+								} transition-all py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4`}
 							>
 								<div className="float-right">
 									<DotIcon
@@ -384,7 +385,7 @@ const AnswerSheetApp: React.FC = () => {
 									size="sm"
 								>
 									<Plus className="w-4 h-4 md:mr-2" />
-									10 Row
+									10
 								</Button>
 
 								<Button
@@ -393,7 +394,7 @@ const AnswerSheetApp: React.FC = () => {
 									size="sm"
 								>
 									<Plus className="w-4 h-4 md:mr-2" />
-									100 Row
+									100
 								</Button>
 
 								<Button
@@ -405,8 +406,8 @@ const AnswerSheetApp: React.FC = () => {
 									variant="default"
 									size="sm"
 								>
-									<ArrowDownCircle className="w-4 h-4 md:mr-2" />
-									Stats
+									<InfoIcon className="w-4 h-4 md:mr-2" />
+									<p className="max-md:hidden">Stats</p>
 								</Button>
 
 								<Button
@@ -416,7 +417,7 @@ const AnswerSheetApp: React.FC = () => {
 									disabled={stats.total === 0}
 								>
 									<Download className="w-4 h-4 md:mr-2" />
-									Export
+									<p className="max-md:hidden">Export</p>
 								</Button>
 
 								<Button
@@ -427,7 +428,9 @@ const AnswerSheetApp: React.FC = () => {
 								>
 									<label className="">
 										<Upload className="w-4 h-4 md:mr-2" />
-										{isImporting ? "Importing..." : "Import"}
+										<p className="max-md:hidden">
+											{isImporting ? "Importing..." : "Import"}
+										</p>
 										<input
 											type="file"
 											accept=".json"
@@ -444,10 +447,10 @@ const AnswerSheetApp: React.FC = () => {
 									className="bg-yellow-600 hover:bg-yellow-600 text-white"
 								>
 									<Bookmark className="w-4 h-4 md:mr-2" />
-									<p className="">Saved</p>
+									<p className="max-md:hidden">Saved</p>
 								</Button>
 
-								<Button
+								{/* <Button
 									onClick={clearAll}
 									variant="destructive"
 									size="sm"
@@ -455,9 +458,8 @@ const AnswerSheetApp: React.FC = () => {
 								>
 									<Trash2 className="w-4 h-4 md:mr-2" />
 									<p className="max-sm:hidden">Clear All</p>
-									<p className="sm:hidden">Reset</p>
-								</Button>
-								<TabsList className="grid w-full grid-cols-2 z-10 ">
+								</Button> */}
+								<TabsList className="grid w-full grid-cols-2 z-10">
 									<TabsTrigger value="questions">
 										<p className="hidden md:block">
 											Questions & Your Answers ({questionFields.length})
