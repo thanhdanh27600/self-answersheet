@@ -126,7 +126,7 @@ const AnswerSheetApp: React.FC = () => {
 		isLoading: isLoadingRemoteData,
 		status,
 	} = useQuery({
-		queryKey: ["remoteData"],
+		queryKey: ["remoteData", id],
 		queryFn: () => fetchRemoteData(id!),
 		refetchOnWindowFocus: true,
 		refetchInterval: !loadingUpdateRemote && !focusElement ? 5000 : false,
