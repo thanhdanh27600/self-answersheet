@@ -13,7 +13,7 @@ import {
 	Check,
 	DotIcon,
 	Download,
-	InfoIcon,
+	LineChart,
 	Plus,
 	Trash2,
 	Upload,
@@ -26,6 +26,13 @@ import React, {
 	type FocusEventHandler,
 } from "react";
 import {useFieldArray, useForm, type UseFormReturn} from "react-hook-form";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "./components/ui/select";
 import {cn} from "./lib/utils";
 import {pb} from "./pocketbase";
 import {useDebounce} from "./utils/useDebounce";
@@ -67,10 +74,11 @@ interface SummaryStats {
 	correct: number;
 	incorrect: number;
 	unanswered: number;
+	saved: number;
 }
 
-const fetchRemoteData = async () => {
-	const data = await pb.collection("b").getOne("8x3q1fyyot9naxk");
+const fetchRemoteData = async (id: string) => {
+	const data = await pb.collection("b").getOne(id);
 	return data?.data;
 };
 
@@ -81,6 +89,7 @@ const AnswerSheetApp: React.FC = () => {
 	const [isImporting, setIsImporting] = useState(false);
 	const [showSavedOnly, setShowSavedOnly] = useState(false);
 	const [focusElement, setFocusElement] = useState<string | null>(null);
+	const [id, setId] = useState<string>("");
 
 	const questionForm: UseFormReturn<QuestionsFormData> =
 		useForm<QuestionsFormData>({
@@ -118,11 +127,12 @@ const AnswerSheetApp: React.FC = () => {
 		status,
 	} = useQuery({
 		queryKey: ["remoteData"],
-		queryFn: fetchRemoteData,
+		queryFn: () => fetchRemoteData(id!),
 		refetchOnWindowFocus: true,
 		refetchInterval: !loadingUpdateRemote && !focusElement ? 5000 : false,
 		refetchIntervalInBackground: false,
 		refetchOnMount: true,
+		enabled: !!id,
 	});
 
 	useEffect(() => {
@@ -172,11 +182,13 @@ const AnswerSheetApp: React.FC = () => {
 	}, [updateRemoteKey, focusElement]);
 
 	const _updateRemote = async (data: AppData, requestKey: string) => {
+		if (!id) return;
 		if (!data.questions.length && !data.answerKey.length) return;
+		if (isLoadingRemoteData) return;
 		if (loadingUpdateRemote) return;
 		setLoadingUpdateRemote(true);
 		try {
-			await pb.collection("b").update("8x3q1fyyot9naxk", {data}, {requestKey});
+			await pb.collection("b").update(id, {data}, {requestKey});
 		} catch (error) {
 			console.log(error);
 		}
@@ -240,8 +252,12 @@ const AnswerSheetApp: React.FC = () => {
 		let correct = 0;
 		let incorrect = 0;
 		let unanswered = 0;
+		let saved = 0;
 
 		data.questions.forEach((question) => {
+			if (question.isSaved) {
+				saved++;
+			}
 			const status = getAnswerStatus(question.uid, question.answer);
 			if (status === true) {
 				correct++;
@@ -252,7 +268,7 @@ const AnswerSheetApp: React.FC = () => {
 			}
 		});
 
-		return {total, correct, incorrect, unanswered};
+		return {total, correct, incorrect, unanswered, saved};
 	}, [data.questions, getAnswerStatus]);
 
 	const exportData = useCallback((): void => {
@@ -352,12 +368,26 @@ const AnswerSheetApp: React.FC = () => {
 			<div className="max-w-4xl mx-auto p-6">
 				<Card className="gap-0">
 					<CardHeader className="relative">
-						<CardTitle className="text-3xl font-bold mb-4">
-							Answer Sheet Self-Revision
+						<CardTitle className="text-3xl font-bold mb-4 flex items-center justify-between">
+							<p>Answer Sheet Self-Revision</p>
+							<Select value={id} onValueChange={(value) => setId(value)}>
+								<SelectTrigger className="w-[180px]">
+									<SelectValue placeholder="ID" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="8x3q1fyyot9naxk">1</SelectItem>
+									<SelectItem value="1fwezzfg9zt4x63">2</SelectItem>
+									<SelectItem value="lce07drbpw4hi7t">3(backup)</SelectItem>
+								</SelectContent>
+							</Select>
 						</CardTitle>
 					</CardHeader>
 
-					<CardContent>
+					<CardContent
+						className={`${
+							isLoadingRemoteData || loadingUpdateRemote ? "opacity-80" : ""
+						}`}
+					>
 						<Tabs
 							value={activeTab}
 							onValueChange={(value) =>
@@ -365,9 +395,7 @@ const AnswerSheetApp: React.FC = () => {
 							}
 						>
 							<div
-								className={`gap-2 flex flex-wrap justify-center sticky top-4 z-10 overflow-hidden bg-white ${
-									isLoadingRemoteData || loadingUpdateRemote ? "opacity-80" : ""
-								} transition-all py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4`}
+								className={`gap-2 flex flex-wrap justify-center sticky top-4 z-10 overflow-hidden bg-white transition-all py-2 md:py-6 px-2 md:px-4 rounded-xl border mb-4`}
 							>
 								<div className="float-right">
 									<DotIcon
@@ -406,7 +434,7 @@ const AnswerSheetApp: React.FC = () => {
 									variant="default"
 									size="sm"
 								>
-									<InfoIcon className="w-4 h-4 md:mr-2" />
+									<LineChart className="w-4 h-4 md:mr-2" />
 									<p className="max-md:hidden">Stats</p>
 								</Button>
 
@@ -447,7 +475,8 @@ const AnswerSheetApp: React.FC = () => {
 									className="bg-yellow-600 hover:bg-yellow-600 text-white"
 								>
 									<Bookmark className="w-4 h-4 md:mr-2" />
-									<p className="max-md:hidden">Saved</p>
+									<p className="max-md:hidden">Saved ({stats.saved})</p>
+									<p className="md:hidden">({stats.saved})</p>
 								</Button>
 
 								{/* <Button
