@@ -19,6 +19,7 @@ import {
 	Upload,
 	X,
 } from "lucide-react";
+import type {RecordModel} from "pocketbase";
 import React, {
 	useCallback,
 	useEffect,
@@ -35,6 +36,7 @@ import {
 } from "./components/ui/select";
 import {cn} from "./lib/utils";
 import {pb} from "./pocketbase";
+import {POCKETBASE_URL} from "./utils/constants";
 import {useDebounce} from "./utils/useDebounce";
 
 interface Question {
@@ -77,9 +79,42 @@ interface SummaryStats {
 	saved: number;
 }
 
+interface MediaRecord extends RecordModel {
+	files: File[];
+	question_uid: string;
+	b_id: string;
+}
+
+interface FileUploadStatus {
+	file: File;
+	status: "pending" | "uploading" | "success" | "error";
+	question_uid: string;
+	error?: string;
+}
+
 const fetchRemoteData = async (id: string) => {
-	const data = await pb.collection("b").getOne(id);
-	return data?.data;
+	const bData = await pb.collection("b").getOne(id);
+	const mediaData = await pb.collection("media").getFullList({
+		filter: `b_id = "${id}"`,
+		expand: "files",
+	});
+	console;
+	return {b: bData?.data, mediaData};
+};
+
+const getFile = ({
+	collectionIdOrName,
+	recordId,
+	filename,
+}: {
+	collectionIdOrName?: string;
+	recordId?: string;
+	filename?: string;
+}) => {
+	if (!collectionIdOrName || !recordId || !filename) {
+		return "";
+	}
+	return `${POCKETBASE_URL}/api/files/${collectionIdOrName}/${recordId}/${filename}`;
 };
 
 const AnswerSheetApp: React.FC = () => {
@@ -90,6 +125,101 @@ const AnswerSheetApp: React.FC = () => {
 	const [showSavedOnly, setShowSavedOnly] = useState(false);
 	const [focusElement, setFocusElement] = useState<string | null>(null);
 	const [id, setId] = useState<string>("");
+	const [files, setFiles] = useState<FileUploadStatus[]>([]);
+	console.log("🚀 ~ App.tsx ~ AnswerSheetApp ~ files:", files);
+
+	const [uploadedMedias, setUploadedMedias] = useState<MediaRecord[]>([]);
+
+	const [isUploading, setIsUploading] = useState(false);
+
+	const handleFileSelect =
+		(uid: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+			const selectedFiles = Array.from(e.target.files || []);
+			const newFileStatuses = selectedFiles.map((file) => ({
+				file,
+				status: "pending" as const,
+				question_uid: uid,
+			}));
+			setFiles(newFileStatuses);
+		};
+
+	useEffect(() => {
+		if (!files.length) return;
+		if (isUploading) return;
+		(async () => {
+			await uploadFiles(files[0].question_uid);
+		})();
+	}, [files]);
+
+	const uploadFiles = async (uid: string) => {
+		if (isUploading) return;
+		setIsUploading(true);
+		try {
+			// Create FormData for PocketBase
+			const formData = new FormData();
+			formData.append("question_uid", uid.trim());
+			formData.append("b_id", id.trim());
+
+			// Add all files to the FormData
+			files.forEach((fileStatus, _index) => {
+				formData.append("files", fileStatus.file);
+			});
+
+			// Update file statuses to uploading
+			setFiles((prev) => prev.map((f) => ({...f, status: "uploading"})));
+
+			// Make request to PocketBase
+			const response = await fetch(
+				`${POCKETBASE_URL}/api/collections/media/records`,
+				{
+					method: "POST",
+					body: formData,
+					headers: {
+						// Don't set Content-Type header - let the browser set it with boundary for FormData
+					},
+				}
+			);
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(
+					errorData.message || `HTTP error! status: ${response.status}`
+				);
+			}
+
+			const result = await response.json();
+			console.log("Upload successful:", result);
+
+			// Update all file statuses to success
+			setFiles((prev) => prev.map((f) => ({...f, status: "success"})));
+
+			// Reset form after successful upload
+			setTimeout(() => {
+				setFiles([]);
+				setIsUploading(false);
+			}, 500);
+		} catch (error) {
+			console.error("Upload failed:", error);
+
+			// Update file statuses to error
+			setFiles((prev) =>
+				prev.map((f) => ({
+					...f,
+					status: "error",
+					error: error instanceof Error ? error.message : "Upload failed",
+				}))
+			);
+		} finally {
+			// setIsUploading(false);
+		}
+	};
+
+	// const clearAllFiles = () => {
+	// 	setFiles([]);
+	// 	if (fileInputRef.current) {
+	// 		fileInputRef.current.value = "";
+	// 	}
+	// };
 
 	const questionForm: UseFormReturn<QuestionsFormData> =
 		useForm<QuestionsFormData>({
@@ -137,12 +267,16 @@ const AnswerSheetApp: React.FC = () => {
 
 	useEffect(() => {
 		if (remoteData) {
-			if (!remoteData.questions?.length) {
+			const b = remoteData.b;
+			const medias = remoteData.mediaData;
+			if (medias) setUploadedMedias(medias as MediaRecord[]);
+
+			if (!b.questions?.length) {
 				// addQuestions(5);
 				scrollTo(0, 0);
 			} else {
-				replaceQuestions(remoteData.questions);
-				replaceKeys(remoteData.answerKey);
+				replaceQuestions(b.questions);
+				replaceKeys(b.answerKey);
 				setLoadingUpdateRemote(false);
 			}
 		} else {
@@ -538,6 +672,9 @@ const AnswerSheetApp: React.FC = () => {
 											const isSaved =
 												questionForm.watch(`questions.${index}.isSaved`) || "";
 											const status = getAnswerStatus(field.uid, answer);
+											const question_files = uploadedMedias.filter(
+												(file) => file.question_uid === field.uid
+											);
 											if (!isSaved && showSavedOnly) return null;
 
 											return (
@@ -553,7 +690,7 @@ const AnswerSheetApp: React.FC = () => {
 															Q{index + 1}
 														</Badge>
 
-														<div className="flex-1 relative">
+														<div className="flex-1 relative w-[89%]">
 															<Input
 																{...questionForm.register(
 																	`questions.${index}.answer`
@@ -572,7 +709,47 @@ const AnswerSheetApp: React.FC = () => {
 																)}
 															</div>
 														</div>
+														<div className="w-[10.5%]" id={field.uid}>
+															<div className="mb-6">
+																<label className="block text-xs font-medium text-gray-700 mb-1 text-center">
+																	Select Files
+																</label>
+																<div className="border-2 border-dashed border-gray-300 rounded-lg p-1 text-center hover:border-blue-400 transition-colors cursor-pointer">
+																	<Upload className="w-4 h-4 text-gray-400 mx-auto" />
+																	<input
+																		type="file"
+																		onChange={(e) =>
+																			handleFileSelect(field.uid)(e)
+																		}
+																		multiple={false}
+																		disabled={isUploading}
+																		className="text-xs flex w-full"
+																	/>
+																</div>
+															</div>
+														</div>
 													</CardContent>
+													{!!question_files.length && (
+														<div className="space-y-2 max-h-64 overflow-y-auto">
+															<div
+																onClick={() => {
+																	const url = getFile({
+																		collectionIdOrName:
+																			question_files[0].collectionId,
+																		filename: question_files[0].files[0] as any,
+																		recordId: question_files[0].id,
+																	});
+																	window.open(url, "_blank"); // Open the URL in a new tab/window
+																}}
+																key={index}
+																className="flex items-center justify-between px-8 py-2 bg-gray-50 rounded-lg cursor-pointer underline"
+															>
+																<p className="text-sm font-medium text-gray-900 truncate">
+																	{question_files[0].files?.join()}
+																</p>
+															</div>
+														</div>
+													)}
 												</Card>
 											);
 										})}
